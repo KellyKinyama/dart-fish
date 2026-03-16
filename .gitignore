@@ -1,3 +1,6 @@
 # https://dart.dev/guides/libraries/private-files
 # Created by `dart pub`
 .dart_tool/
+chess_model_frozen.json
+chess_model_online.json
+nnue_static_model.json

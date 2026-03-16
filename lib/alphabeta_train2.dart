@@ -1,21 +1,40 @@
 import 'dart:math';
 import 'chess3.dart';
-import 'chess_nnue2.dart'; // Provides ChessWithNNUE
-import 'nnue_logic_batch.dart'; // Provides TrainingPosition (if you re-use) and NNUE core
-import 'nnue_persistence.dart'; // Provides NNUESerializer.load/save
+import 'chess_nnue3.dart'; // Provides ChessWithNNUE
+import 'nnue_logic_batch2.dart'; // Provides TrainingPosition (if you re-use) and NNUE core
+import 'nnue_persistence2.dart'; // Provides NNUESerializer.load/save
 
 // -----------------------------
 // Search & Training Orchestrator
 // -----------------------------
+
+class RootMove {
+  Move move;
+  double score;
+
+  RootMove(this.move, this.score);
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    return "RootMove(move: ${move}: score: ${score.toStringAsFixed(2)})";
+  }
+}
 
 class SearchResult {
   final Move? move;
   final double score;
   final int nodes;
   final List<Move> pv;
+  Map<Move, RootMove> rootMoves = {};
 
-  SearchResult(this.move, this.score, {this.nodes = 0, List<Move>? pv})
-    : pv = pv ?? const <Move>[];
+  SearchResult(
+    this.move,
+    this.score, {
+    this.nodes = 0,
+    List<Move>? pv,
+    this.rootMoves = const {},
+  }) : pv = pv ?? const <Move>[];
 }
 
 class NNUESearcher {
@@ -183,9 +202,10 @@ class NNUETrainer {
 Future<void> main() async {
   final game = ChessWithNNUE();
   final trainer = NNUETrainer(game);
+  
   final searcher = NNUESearcher(game);
 
-  const String modelPath = 'chess_model_v1.json';
+  const String modelPath = 'chess_model_v2.json';
 
   // 1) Load weights if available
   try {

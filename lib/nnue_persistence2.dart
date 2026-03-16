@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'nnue_logic_batch.dart'; // Import your NNUE and LinearLayer classes
+import 'nnue_logic_batch2.dart'; // Import your NNUE and LinearLayer classes
 
 class NNUESerializer {
   /// Maps the NNUE layers into a flat list of Float64Lists for processing.

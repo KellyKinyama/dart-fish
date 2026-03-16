@@ -1799,6 +1799,12 @@ class Move {
   String get toAlgebraic {
     return Chess.algebraic(to);
   }
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    return "$fromAlgebraic$toAlgebraic";
+  }
 }
 
 class State {
