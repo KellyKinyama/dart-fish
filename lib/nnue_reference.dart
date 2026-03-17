@@ -599,3 +599,13 @@ class NnueAccumulatorRef {
     }
   }
 }
+
+extension NNUEBoardEval on NNUERef {
+  /// Static NNUE evaluation for ANY board state.
+  /// This rebuilds the accumulator fresh every time.
+  double evaluateBoard(List<Piece?> board, Color turn) {
+    final acc = newAccumulator();
+    refreshAccumulator(acc, board); // full accumulator rebuild
+    return evaluate(acc, turn); // return centipawn score
+  }
+}

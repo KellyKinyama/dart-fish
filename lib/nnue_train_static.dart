@@ -4,7 +4,7 @@ import 'chess_with_nnue.dart';
 import 'nnue_reference.dart';
 import 'nnue_logic_batch2.dart';
 import 'nnue_persistence_ref.dart';
-import 'nnue_static_dataset5.dart';
+import 'nnue_static_dataset1.dart';
 
 Future<void> main() async {
   final game = ChessWithNNUE();
