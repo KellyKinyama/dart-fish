@@ -81,7 +81,7 @@ class ARSPositionSampler {
     this.numDirections = 4, // fewer directions → faster
     this.sigma = 0.002,
     int? topB,
-  }) : topB = topB ?? (4 ~/ 2); // default to 2
+  }) : topB = topB ?? (4 ~/ 2);
 
   // -----------------------------
   // Z-score normalization
@@ -141,16 +141,14 @@ class ARSPositionSampler {
         double bestPlus = -1e18;
         double bestMinus = -1e18;
 
-        // Score moves for +δ and −δ
         for (final mv in moves) {
           final temp = ChessWithNNUE();
           temp.load(game.fen);
           temp.make_move(mv);
 
-          // +delta evaluation with proper accumulator
+          // +delta
           {
             final acc = plus.newAccumulator();
-            plus.resetAccumulator(acc);
             plus.refreshAccumulator(acc, temp.board);
 
             double s = plus.evaluate(acc, temp.turn);
@@ -159,10 +157,9 @@ class ARSPositionSampler {
             if (s > bestPlus) bestPlus = s;
           }
 
-          // -delta evaluation
+          // -delta
           {
             final acc = minus.newAccumulator();
-            minus.resetAccumulator(acc);
             minus.refreshAccumulator(acc, temp.board);
 
             double s = minus.evaluate(acc, temp.turn);
@@ -177,7 +174,6 @@ class ARSPositionSampler {
         dirs.add(_DirectionEval(perturb, bestPlus, bestMinus));
       }
 
-      // Sort directions by robustness
       dirs.sort((a, b) => max(b.plus, b.minus).compareTo(max(a.plus, a.minus)));
 
       final bestDirs = dirs.take(topB).toList();
@@ -194,7 +190,6 @@ class ARSPositionSampler {
       for (final mv in moves) {
         double sumScore = 0.0;
 
-        // temp board after applying mv
         final temp = ChessWithNNUE();
         temp.load(game.fen);
         temp.make_move(mv);
@@ -203,10 +198,9 @@ class ARSPositionSampler {
           final sign = (dir.plus >= dir.minus) ? 1 : -1;
 
           final clone = NNUERef.cloneFrom(game.nnue);
-          dir.pert.applyTo(clone, sign: sign);
+          dir.perturb.applyTo(clone, sign: sign);
 
           final acc = clone.newAccumulator();
-          clone.resetAccumulator(acc);
           clone.refreshAccumulator(acc, temp.board);
 
           double s = clone.evaluate(acc, temp.turn);
