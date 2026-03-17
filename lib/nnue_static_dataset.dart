@@ -2,43 +2,48 @@
 import 'dart:math';
 import 'chess3.dart';
 import 'chess_with_nnue.dart'; // Your wrapper that extends chess3.Chess
+// import 'engine.dart';
 import 'nnue_logic_batch2.dart'; // TrainingPosition
 import 'static_labeler.dart'; // staticEvalCpFromFen
 
 class StaticDatasetBuilder {
   final Random rng = Random();
 
-  /// Generate labeled samples using random playouts from the current position.
-  /// Labels come from the static evaluator via FEN (independent of NNUE).
-  ///
-  /// - numPositions: how many samples to create
-  /// - playoutDepth: how many random moves to play before labeling
-  ///
-  /// Returns a list of TrainingPosition(boardCopy, sideToMove, targetCp).
   List<TrainingPosition> generate(
     ChessWithNNUE game, {
-    int numPositions = 256,
+    int numPositions = 16,
     int playoutDepth = 4,
   }) {
     final samples = <TrainingPosition>[];
 
-    for (int i = 0; i < numPositions; i++) {
-      // Start from the initial position (or current position if you prefer)
+    while (samples.length < numPositions) {
+      // Reset to clean starting position
       game.reset();
 
-      // Random playout to diversify
+      bool terminal = false;
+
+      // Random playout
       for (int j = 0; j < playoutDepth; j++) {
         final moves = game.generate_moves();
-        if (moves.isEmpty) break;
-        final mv = moves[rng.nextInt(moves.length)];
-        game.make_move(mv);
+
+        if (moves.isEmpty) {
+          // Checkmate or stalemate → skip this position
+          terminal = true;
+          break;
+        }
+
+        game.make_move(moves[rng.nextInt(moves.length)]);
       }
 
-      // Label from static evaluator using FEN
-      final fen = game.fen; // <- string, no cross-type issues
+      if (terminal) {
+        // Try again, do NOT add this sample
+        continue;
+      }
+
+      // At this point the position is valid → label it
+      final fen = game.fen;
       final targetCp = staticEvalCpFromFen(fen);
 
-      // Snapshot board & side-to-move for the sample
       final boardCopy = List<Piece?>.from(game.board);
       final stm = game.turn;
 

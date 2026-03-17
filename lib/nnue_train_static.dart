@@ -4,7 +4,7 @@ import 'chess_with_nnue.dart';
 import 'nnue_reference.dart';
 import 'nnue_logic_batch2.dart';
 import 'nnue_persistence_ref.dart';
-import 'nnue_static_dataset.dart';
+import 'nnue_static_dataset5.dart';
 
 Future<void> main() async {
   final game = ChessWithNNUE();
@@ -17,9 +17,9 @@ Future<void> main() async {
   print(ok ? "Loaded NNUE model from $modelPath" : "Start random NNUE.");
 
   // Hyperparameters (tune as needed)
-  const int iterations = 20;
-  const int samplesPerIter = 512;
-  const int batchSize = 32;
+  const int iterations = 1000;
+  const int samplesPerIter = 64;
+  const int batchSize = 16;
   const double lr = 0.0005;
 
   print("--- STATIC NNUE TRAINING ---");
@@ -31,7 +31,7 @@ Future<void> main() async {
     final samples = datasetBuilder.generate(
       game,
       numPositions: samplesPerIter,
-      playoutDepth: 5,
+      playoutDepth: 4,
     );
 
     // Shuffle and mini-batch train
@@ -55,14 +55,17 @@ Future<void> main() async {
     final valset = datasetBuilder.generate(
       game,
       numPositions: 64,
-      playoutDepth: 3,
+      playoutDepth: 4,
     );
     final valMSE = _batchMseNet(game.nnue, valset);
     print("Validation MSE (net): ${valMSE.toStringAsFixed(6)}");
 
     // Save
+    // if (it % 200 == 0) {
     await NNUESerializer.save(game.nnue, modelPath);
+
     print("Saved -> $modelPath");
+    // }
   }
 }
 
