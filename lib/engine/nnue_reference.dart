@@ -18,9 +18,9 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'chess3.dart';
+import 'chess.dart';
 import 'constants.dart';
-import 'nnue_logic_batch2.dart' show TrainingPosition;
+import 'nnue_logic_batch.dart' show TrainingPosition;
 
 class NNUERef {
   // Model dimensions

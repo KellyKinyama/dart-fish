@@ -1,12 +1,21 @@
 import "dart:io";
-import "nnue_engine.dart";
-// import "nnue_minimax.dart";
+// import "mcts_nnue.dart";
+import "package:dart_cuda/aft_transformer_decoder.dart";
+import "package:dart_cuda/gpu_tensor.dart";
+import "package:dart_cuda/network_utils.dart";
+
+import "chess_engine2.dart";
+
+import 'chess_with_nnue.dart';
 import "nnue_persistence_ref.dart";
 
 Future<void> main() async {
   const modelPath = "nnue_static_model.json";
+  const String weightPath = "chess_gpt.bin";
 
-  NNUEEngine engine = NNUEEngine();
+  // NNUEEngine engine = NNUEEngine();
+
+  var engine = ChessWithNNUE();
 
   // Load NNUE weights
   final loaded = await NNUESerializer.load(engine.nnue, modelPath);
@@ -36,7 +45,7 @@ Future<void> main() async {
     }
 
     if (cmd == "ucinewgame") {
-      engine = NNUEEngine();
+      engine = ChessWithNNUE();
       continue;
     }
 
@@ -50,7 +59,7 @@ Future<void> main() async {
       final parts = cmd.split(" ");
 
       if (parts.length >= 2 && parts[1] == "startpos") {
-        engine = NNUEEngine();
+        engine = ChessWithNNUE();
 
         // Apply moves if any
         final movesIndex = parts.indexOf("moves");
@@ -68,7 +77,7 @@ Future<void> main() async {
           i++;
         }
         final fen = fenParts.join(" ");
-        engine = NNUEEngine.fromFEN(fen);
+        engine = ChessWithNNUE.fromFEN(fen);
 
         // Moves after fen
         if (i < parts.length && parts[i] == "moves") {
@@ -92,8 +101,42 @@ Future<void> main() async {
         depth = int.tryParse(parts[2]) ?? 6;
       }
 
-      final bestMoveLAN = engine.play(depth: depth);
-      print("bestmove $bestMoveLAN");
+      // Load Transformer policy head
+      const vocabSize = 4098;
+      const bigSize = 16;
+      const blockSize = 16;
+
+      final policyNet = TransformerDecoder(
+        vocabSize: vocabSize,
+        embedSize: bigSize,
+        encoderEmbedSize: bigSize,
+        numLayers: 2,
+        numHeads: 4,
+        blockSize: blockSize,
+      );
+
+      final dummyEnc = Tensor.zeros([1, bigSize]);
+
+      await loadModuleBinary(policyNet, weightPath);
+      final mcts = MCTS(
+        engine,
+        policyNet,
+        dummyEnc,
+        blockSize,
+        iterations: 4000,
+        cPuct: 1.2,
+      );
+
+      // Best move as LAN
+      final bestLan = mcts.search();
+      if (bestLan != null) {
+        print("bestmove $bestLan");
+        // engine.moveLAN(bestLan); // implement or reuse your own LAN applier
+      } else {
+        print('No legal moves found (game over).');
+      }
+      // final bestMoveLAN = engine.play(depth: depth);
+      // print("bestmove $bestLan");
       continue;
     }
 
